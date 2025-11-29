@@ -87,55 +87,73 @@ func (s *Server) strictAuthMiddleware(next http.Handler) http.Handler {
 // authMiddlewareWithOptions implements the core authentication logic with strict/soft mode.
 func (s *Server) authMiddlewareWithOptions(next http.Handler, strict bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		idToken := r.Header.Get("X-ID-Token")
 		tokenString := s.extractTokenFromRequest(r)
 
-		if tokenString == "" {
+		fail := func(msg string) {
 			if strict {
 				w.Header().Set("WWW-Authenticate", "Bearer")
 				w.WriteHeader(http.StatusUnauthorized)
-				_, _ = w.Write([]byte(`{"error":"Authentication required"}`))
-				return
+				_, _ = w.Write([]byte(fmt.Sprintf(`{"error":"%s"}`, msg)))
+			} else {
+				next.ServeHTTP(w, r)
 			}
-			next.ServeHTTP(w, r)
-			return
 		}
 
-		if len(tokenString) < 10 || strings.Contains(tokenString, " ") {
-			if strict {
-				w.Header().Set("WWW-Authenticate", "Bearer error=\"invalid_token\"")
-				w.WriteHeader(http.StatusUnauthorized)
-				_, _ = w.Write([]byte(`{"error":"Invalid token format"}`))
+		if idToken != "" {
+			if tokenString == "" {
+				fail("Authentication required (Access Token missing)")
 				return
 			}
-			next.ServeHTTP(w, r)
-			return
-		}
 
-		user, err := s.validateToken(r.Context(), tokenString)
-		if err != nil {
-			if strict {
-				w.Header().Set("WWW-Authenticate", "Bearer error=\"invalid_token\"")
-				w.WriteHeader(http.StatusUnauthorized)
-				_, _ = w.Write([]byte(`{"error":"Invalid or expired token"}`))
+			_, err := s.parseJWT(tokenString)
+			if err != nil {
+				fail("Invalid or expired access token")
 				return
 			}
-			next.ServeHTTP(w, r)
-			return
+
+			user, err := s.validateToken(r.Context(), idToken)
+			if err != nil {
+				fail("Invalid or expired ID token")
+				return
+			}
+
+			if user != nil {
+				ctx := context.WithValue(r.Context(), userContextKey, user)
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
 		}
 
-		if user != nil {
-			ctx := context.WithValue(r.Context(), userContextKey, user)
-			r = r.WithContext(ctx)
+		if tokenString != "" {
+			if len(tokenString) < 10 || strings.Contains(tokenString, " ") {
+				fail("Invalid token format")
+				return
+			}
+
+			user, err := s.validateToken(r.Context(), tokenString)
+			if err != nil {
+				fail("Invalid or expired token")
+				return
+			}
+
+			if user != nil {
+				ctx := context.WithValue(r.Context(), userContextKey, user)
+				r = r.WithContext(ctx)
+			}
+		} else if strict {
+			fail("Authentication required")
+			return
 		}
 
 		next.ServeHTTP(w, r)
 	})
 }
 
-// validateToken parses and validates a JWT token, returning the user if valid.
-func (s *Server) validateToken(ctx context.Context, tokenString string) (*models.User, error) {
+// parseJWT parses and cryptographically validates a token, returning its claims.
+// It checks signature, expiration, and issuer.
+func (s *Server) parseJWT(tokenString string) (jwt.MapClaims, error) {
 	var token *jwt.Token
-
 	var err error
 
 	if s.jwks != nil {
@@ -146,7 +164,6 @@ func (s *Server) validateToken(ctx context.Context, tokenString string) (*models
 			if !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 			}
-
 			return s.jwtSecret, nil
 		})
 	}
@@ -169,6 +186,16 @@ func (s *Server) validateToken(ctx context.Context, tokenString string) (*models
 		if iss != s.externalIssuer {
 			return nil, fmt.Errorf("invalid issuer: expected %s, got %s", s.externalIssuer, iss)
 		}
+	}
+
+	return claims, nil
+}
+
+// validateToken parses a token, validates it, and resolves the User from the DB.
+func (s *Server) validateToken(ctx context.Context, tokenString string) (*models.User, error) {
+	claims, err := s.parseJWT(tokenString)
+	if err != nil {
+		return nil, err
 	}
 
 	email := s.extractEmailFromClaims(claims)

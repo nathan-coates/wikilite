@@ -77,9 +77,9 @@ func newServerCmd(state *cliState) *cobra.Command {
 			if state.Config.JWKSURL != "" {
 				log.Printf("Auth Mode: External IDP (JWKS: %s)", state.Config.JWKSURL)
 				logAuthModeDetails(&state.Config)
-				return
+			} else {
+				log.Printf("Auth Mode: Local HMAC")
 			}
-			log.Printf("Auth Mode: Local HMAC")
 
 			stop := make(chan os.Signal, 1)
 			signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
