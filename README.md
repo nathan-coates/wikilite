@@ -16,7 +16,7 @@ Wikilite is a lightweight, extensible wiki engine written in Go. It allows users
 
 Wikilite releases include three build configurations:
 
-### **UI + Plugins (Recommended)**
+### **UI + Plugins (Recommended for Basic Deployments)**
 Includes the HTML frontend and plugin support:
 
 ```
@@ -30,12 +30,29 @@ API server with plugin support, no UI:
 go build -tags plugins -o wikilite cmd/main.go
 ```
 
-### **Headless (API Only)**
+### **Headless**
 Minimal API server, no UI or plugins:
 
 ```
 go build -o wikilite cmd/main.go
 ```
+
+## **Authentication/Authorization**
+### **Local Auth** 
+Wikilite supports the following authentication methods when using local auth:
+* User/Password that sets a local JWT access token in an `httpOnly` cookie - ```/api/login```.
+* User/Password that returns a local JWT access token for direct usage in API calls = ```/api/login/token```.
+
+### **External IdP Auth**
+When using external IdP auth, Wikilite supports the following methods:
+* JWT access token only if it includes an email address claim in ```Authorization: Bearer``` in the request header.
+* JWT access token + an ID Token from the external IdP. 
+  * Access token in ```Authorization: Bearer``` header.`
+  * ID token in ```X-ID-Token``` header.
+
+If an external user is not found in the system, they will be created automatically with `READ` access.
+
+_Note_: If included in the build, the UI is disabled when using external IdP auth.
 
 ## **Configuration**
 
@@ -50,12 +67,12 @@ LOG_DB_PATH=logs.db
 
 ### External IdP Support
 
-Wikilite supports external identity providers (IdP) for user management. To enable, set the following environment variables:
+To enable external IdP support, set the following environment variables:
 
 ```
 JWKS_URL=https://example.com/.well-known/jwks.json
 JWT_ISSUER=https://example.com/
-JWT_EMAIL_CLAIM=email # Optional, defaults to "email"
+JWT_EMAIL_CLAIM=email # Optional, defaults to "email". Looks in ID token if present.
 ```
 
 ### Plugin Support

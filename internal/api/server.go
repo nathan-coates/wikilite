@@ -47,6 +47,11 @@ type Server struct {
 	jwtSecret []byte
 }
 
+// isExternalIDPEnabled returns true if external IDP support is configured.
+func (s *Server) isExternalIDPEnabled() bool {
+	return s.jwksURL != ""
+}
+
 // NewServer creates a new instance of the server.
 func NewServer(
 	database *db.DB,

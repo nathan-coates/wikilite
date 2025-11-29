@@ -16,6 +16,11 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 )
 
+// uiRenderExternalIDPDisabled renders the page shown when external IDP is enabled.
+func (s *Server) uiRenderExternalIDPDisabled(w http.ResponseWriter, r *http.Request) {
+	s.renderWithUser(w, r, "external_idp_disabled.gohtml", nil)
+}
+
 // uiRenderHome renders the home page with a paginated list of articles.
 func (s *Server) uiRenderHome(w http.ResponseWriter, r *http.Request) {
 	input := &ArticlePaginationInput{

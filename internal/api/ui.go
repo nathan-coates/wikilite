@@ -84,6 +84,11 @@ func (s *Server) registerFrontendRoutes(mux *http.ServeMux) error {
 		return err
 	}
 
+	if s.isExternalIDPEnabled() {
+		mux.HandleFunc("GET /{path...}", s.uiRenderExternalIDPDisabled)
+		return nil
+	}
+
 	// Public
 	mux.HandleFunc("GET /", s.uiRenderHome)
 	mux.HandleFunc("GET /wiki/{slug}", s.uiRenderArticle)
