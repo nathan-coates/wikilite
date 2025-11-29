@@ -1,0 +1,122 @@
+{{template "base.gohtml" .}}
+
+{{define "Title"}}Editing {{.Data.ArticleTitle}}{{end}}
+
+{{define "head"}}
+    <!-- EasyMDE CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+    <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+    <style>
+        .CodeMirror {
+            border-color: var(--border);
+            font-family: monospace;
+            font-size: 0.95rem;
+        }
+        .editor-toolbar {
+            border-color: var(--border);
+            background: #fafafa;
+        }
+    </style>
+{{end}}
+
+{{define "content"}}
+    <div class="flex-row">
+        <h2>Editing: {{.Data.ArticleTitle}}</h2>
+        <span style="font-size: 0.8rem; color: #666;">Draft ID: {{.Data.Id}}</span>
+    </div>
+
+    <form id="editorForm" method="POST">
+        <textarea name="content" id="markdown-editor">{{.Data.Content}}</textarea>
+
+        <div class="flex-row" style="margin-top: 1rem;">
+            <div>
+                <!-- Save: Standard Form Submit (Keeps history, useful for "Undo" behavior via Back button) -->
+                <button type="submit"
+                        formaction="/editor/{{.Data.Id}}/save"
+                        class="btn btn-outline"
+                        id="btn-save">Save Draft (Ctrl+S)</button>
+
+                <!-- Discard: AJAX + Replace History (Prevents going back to deleted draft) -->
+                <button type="button"
+                        class="btn btn-outline"
+                        style="color: #dc3545; border-color: #dc3545; margin-left: 10px;"
+                        onclick="submitAndReplace('/editor/{{.Data.Id}}/discard', true)">Discard</button>
+            </div>
+
+            <!-- Publish: AJAX + Replace History (Prevents going back to deleted draft) -->
+            <button type="button"
+                    class="btn"
+                    onclick="submitAndReplace('/editor/{{.Data.Id}}/publish', false)">Publish Changes</button>
+        </div>
+    </form>
+
+    <script>
+        const easyMDE = new EasyMDE({
+            element: document.getElementById('markdown-editor'),
+            spellChecker: false,
+            status: ["lines", "words", "cursor"],
+            forceSync: true,
+            minHeight: "400px",
+        });
+
+        const initialContent = easyMDE.value();
+
+        async function submitAndReplace(actionUrl, requireConfirm) {
+            if (requireConfirm && !confirm('Are you sure you want to discard this draft?')) {
+                return;
+            }
+
+            easyMDE.codemirror.save();
+
+            window.onbeforeunload = null;
+
+            const form = document.getElementById('editorForm');
+            const formData = new FormData(form);
+
+            formData.set('content', easyMDE.value());
+
+            try {
+                document.body.style.cursor = 'wait'; // Feedback
+
+                const response = await fetch(actionUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    window.location.replace(response.url);
+                } else {
+                    alert("An error occurred. Please try again.");
+                    document.body.style.cursor = 'default';
+                    window.onbeforeunload = checkUnsaved;
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Network error.");
+                document.body.style.cursor = 'default';
+                window.onbeforeunload = checkUnsaved;
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                easyMDE.codemirror.save();
+                const form = document.getElementById('editorForm');
+                form.action = "/editor/{{.Data.Id}}/save";
+                form.submit();
+            }
+        });
+
+        function checkUnsaved() {
+            if (easyMDE.value() !== initialContent) {
+                return "You have unsaved changes.";
+            }
+        }
+        window.onbeforeunload = checkUnsaved;
+
+        document.getElementById('editorForm').addEventListener('submit', function() {
+            window.onbeforeunload = null;
+        });
+    </script>
+{{end}}

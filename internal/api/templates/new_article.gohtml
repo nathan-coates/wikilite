@@ -1,0 +1,32 @@
+{{template "base.gohtml" .}}
+
+{{define "Title"}}New Article{{end}}
+
+{{define "content"}}
+    <div style="max-width: 600px; margin: 0 auto;">
+        <h1 style="margin-bottom: 1.5rem;">Create New Article</h1>
+
+        <div style="padding: 2rem; border: 1px solid var(--border); border-radius: 8px; background: #fff;">
+            <form action="/new" method="POST">
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="title" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Article Title</label>
+                    <input type="text"
+                           id="title"
+                           name="title"
+                           placeholder="e.g. Project Documentation"
+                           required
+                           autofocus
+                           style="font-size: 1.1rem; padding: 12px;">
+                    <p style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">
+                        This will act as the unique identifier for the page URL.
+                    </p>
+                </div>
+
+                <div class="flex-row">
+                    <a href="/dashboard" class="btn btn-outline" style="text-decoration: none;">Cancel</a>
+                    <button type="submit" class="btn">Start Writing &rarr;</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{{end}}

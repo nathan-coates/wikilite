@@ -1,0 +1,36 @@
+{{template "base.gohtml" .}}
+
+{{define "Title"}}{{.Data.Title}}{{end}}
+
+{{define "content"}}
+    <div class="flex-row" style="margin-bottom: 1rem;">
+        <h1 style="margin:0;">{{.Data.Title}}</h1>
+        <div>
+            {{if .User}}
+                <form action="/wiki/{{.Data.Slug}}/edit" method="POST" style="display:inline;">
+                    <button type="submit" class="btn">Edit</button>
+                </form>
+            {{end}}
+
+            <a href="/wiki/{{.Data.Slug}}/history" class="btn btn-outline" style="margin-left: 5px;">History</a>
+
+            {{/* Admin Only Delete Button (Role 3 = Admin) */}}
+            {{if and .User (eq .User.Role 3)}}
+                <form action="/wiki/{{.Data.Slug}}/delete" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this article? This cannot be undone.');">
+                    <button type="submit" class="btn btn-outline" style="color: #dc3545; border-color: #dc3545; margin-left: 5px;">Delete</button>
+                </form>
+            {{end}}
+        </div>
+    </div>
+
+    <div class="meta">
+        {{if gt .Data.Version 0}}
+            Version {{.Data.Version}}
+            {{if .Data.Author}}• by {{.Data.Author}}{{end}}
+        {{end}}
+    </div>
+
+    <article>
+        {{.Data.Data | safeHTML}}
+    </article>
+{{end}}

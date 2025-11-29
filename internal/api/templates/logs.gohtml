@@ -1,0 +1,55 @@
+{{template "base.gohtml" .}}
+
+{{define "Title"}}System Logs{{end}}
+
+{{define "content"}}
+    <div class="flex-row" style="margin-bottom: 2rem;">
+        <h1 style="margin:0;">System Logs</h1>
+        <div style="font-size: 0.9rem; color: #666;">Total: {{.Data.Total}}</div>
+    </div>
+
+    <div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+            <thead>
+            <tr style="background: var(--code-bg); text-align: left; border-bottom: 1px solid var(--border);">
+                <th style="padding: 10px 15px;">Level</th>
+                <th style="padding: 10px 15px;">Time</th>
+                <th style="padding: 10px 15px;">Source</th>
+                <th style="padding: 10px 15px;">Message</th>
+                <th style="padding: 10px 15px;">Data</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{range .Data.Logs}}
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 10px 15px; font-weight: 600;">
+                        {{/* Comparisons against string literals */}}
+                        {{if eq .Level "INFO"}}<span style="color: #28a745;">INFO</span>
+                        {{else if eq .Level "WARNING"}}<span style="color: #ffc107;">WARN</span>
+                        {{else if eq .Level "ERROR"}}<span style="color: #dc3545;">ERROR</span>
+                        {{else}}{{.Level}}{{end}}
+                    </td>
+                    <td style="padding: 10px 15px; color: #666; white-space: nowrap;">
+                        {{.CreatedAt.Format "Jan 02 15:04:05"}}
+                    </td>
+                    <td style="padding: 10px 15px;">{{.Source}}</td>
+                    <td style="padding: 10px 15px;">{{.Message}}</td>
+                    <td style="padding: 10px 15px; color: #666; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{.Data}}">
+                        {{.Data}}
+                    </td>
+                </tr>
+            {{end}}
+            </tbody>
+        </table>
+    </div>
+
+    <div style="margin-top: 2rem; display: flex; gap: 10px;">
+        {{if gt .Data.Page 1}}
+            <a href="/admin/logs?page={{ sub .Data.Page 1 }}" class="btn btn-outline">&larr; Newer</a>
+        {{end}}
+        <!-- Simple next logic assuming we have more if count == limit -->
+        {{if eq (len .Data.Logs) .Data.Limit}}
+            <a href="/admin/logs?page={{ add .Data.Page 1 }}" class="btn btn-outline">Older &rarr;</a>
+        {{end}}
+    </div>
+{{end}}

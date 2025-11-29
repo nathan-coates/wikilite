@@ -1,0 +1,30 @@
+{{template "base.gohtml" .}}
+
+{{define "Title"}}Orphaned Articles{{end}}
+
+{{define "content"}}
+    <div class="flex-row">
+        <h2>Orphaned Articles</h2>
+    </div>
+
+    <div class="alert" style="background: var(--code-bg); border-color: var(--border); color: #666; margin-bottom: 2rem;">
+        These articles are not linked to by any other article in the wiki.
+    </div>
+
+    {{if .Data.Articles}}
+        <ul style="list-style: none; padding: 0;">
+            {{range .Data.Articles}}
+                <li style="padding: 15px 0; border-bottom: 1px solid var(--border);">
+                    <a href="/wiki/{{.Slug}}" style="font-weight: 600; font-size: 1.1rem; text-decoration: none; color: var(--link);">
+                        {{.Title}}
+                    </a>
+                    <div style="font-size: 0.85rem; color: #666; margin-top: 4px;">
+                        v{{.Version}} • Updated {{.CreatedAt.Format "Jan 02, 2006"}}
+                    </div>
+                </li>
+            {{end}}
+        </ul>
+    {{else}}
+        <p>Great job! There are no orphaned articles.</p>
+    {{end}}
+{{end}}

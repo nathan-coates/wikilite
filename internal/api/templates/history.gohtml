@@ -1,0 +1,41 @@
+{{template "base.gohtml" .}}
+
+{{define "Title"}}History - {{.Data.Slug}}{{end}}
+
+{{define "content"}}
+    <div class="flex-row" style="margin-bottom: 2rem;">
+        <h1 style="margin:0;">History: {{.Data.Slug}}</h1>
+        <a href="/wiki/{{.Data.Slug}}" class="btn btn-outline">&larr; Back to Article</a>
+    </div>
+
+    {{if .Data.History}}
+        <div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem;">
+                <thead>
+                <tr style="background: var(--code-bg); text-align: left; border-bottom: 1px solid var(--border);">
+                    <th style="padding: 12px 15px;">Version</th>
+                    <th style="padding: 12px 15px;">Date</th>
+                    <th style="padding: 12px 15px; text-align: right;">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{range .Data.History}}
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <td style="padding: 12px 15px; font-weight: 600;">v{{.Version}}</td>
+                        <td style="padding: 12px 15px; color: #666;">
+                            {{.CreatedAt.Format "Jan 02, 2006 at 15:04"}}
+                        </td>
+                        <td style="padding: 12px 15px; text-align: right;">
+                            <a href="/wiki/{{$.Data.Slug}}/history/{{.Version}}" class="btn btn-outline" style="padding: 4px 10px; font-size: 0.85rem;">View</a>
+                        </td>
+                    </tr>
+                {{end}}
+                </tbody>
+            </table>
+        </div>
+    {{else}}
+        <div class="alert">
+            No history records found for this article.
+        </div>
+    {{end}}
+{{end}}

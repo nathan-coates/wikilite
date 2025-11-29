@@ -1,0 +1,30 @@
+{{template "base.gohtml" .}}
+
+{{define "content"}}
+    <div class="flex-row">
+        <h2>Latest Articles</h2>
+    </div>
+
+    {{if .Data.Articles}}
+        <ul style="list-style: none; padding: 0;">
+            {{range .Data.Articles}}
+                <li style="padding: 15px 0; border-bottom: 1px solid var(--border);">
+                    <a href="/wiki/{{.Slug}}" style="font-weight: 600; font-size: 1.1rem; text-decoration: none; color: var(--link);">
+                        {{.Title}}
+                    </a>
+                    <div style="font-size: 0.85rem; color: #666; margin-top: 4px;">
+                        {{if gt .Version 0}}v{{.Version}} • {{end}}Updated {{.CreatedAt.Format "Jan 02, 2006"}}
+                    </div>
+                </li>
+            {{end}}
+        </ul>
+
+        <div style="margin-top: 2rem; display: flex; gap: 10px;">
+            {{if gt .Data.Page 1}}
+                <a href="/?page={{ sub .Data.Page 1 }}" class="btn btn-outline">&larr; Previous</a>
+            {{end}}
+        </div>
+    {{else}}
+        <p>No articles found. Why not create one?</p>
+    {{end}}
+{{end}}

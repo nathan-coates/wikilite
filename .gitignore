@@ -1,0 +1,15 @@
+.idea
+/logs.db
+/wiki.db
+.DS_Store
+.env
+cmd/main_old.go
+plugins/
+plugins.db
+golangci-lint
+jspkgs/node_modules/
+jspkgs/package-lock.json
+go.sum
+Makefile
+# Added by goreleaser init:
+dist/

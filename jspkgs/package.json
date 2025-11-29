@@ -1,0 +1,24 @@
+{
+  "name": "jspkgs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "entry.js",
+  "scripts": {
+    "build": "esbuild entry.js --bundle --minify --outfile=jspkgs.js --target=es2020"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "dayjs": "^1.11.19",
+    "dompurify": "^3.3.0",
+    "linkedom": "^0.18.12",
+    "lodash": "^4.17.21",
+    "marked": "^17.0.1",
+    "mustache": "^4.2.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.27.0"
+  }
+}

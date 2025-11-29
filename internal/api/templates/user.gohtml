@@ -1,0 +1,45 @@
+{{template "base" .}}
+
+{{define "Title"}}User Profile{{end}}
+
+{{define "content"}}
+    <h1>User Profile</h1>
+    <div class="meta">
+        <strong>Email:</strong> {{.User.Email}}<br>
+        <strong>Role:</strong> {{formatRole .User.Role}}
+    </div>
+
+    <h2>Update Password</h2>
+    <form action="/user" method="POST">
+        <label for="current_password">Current Password</label>
+        <input type="password" id="current_password" name="current_password" required>
+        <label for="new_password">New Password</label>
+        <input type="password" id="new_password" name="new_password" required>
+        <label for="confirm_password">Confirm New Password</label>
+        <input type="password" id="confirm_password" name="confirm_password" required>
+        <button type="submit" class="btn">Update Password</button>
+    </form>
+
+    <script>
+        function showToast(message) {
+            var x = document.getElementById("toast");
+            x.innerHTML = message;
+            x.className = "show";
+            setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+        }
+
+        {{if .Data}}
+            {{if .Data.Success}}
+                setTimeout(() => {
+                    showToast("{{.Data.Success}}");
+                }, 150)
+            {{end}}
+
+            {{if .Data.Error}}
+                setTimeout(() => {
+                    showToast("{{.Data.Error}}");
+                }, 150)
+            {{end}}
+        {{end}}
+    </script>
+{{end}}

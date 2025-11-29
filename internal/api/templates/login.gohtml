@@ -1,0 +1,25 @@
+{{template "base.gohtml" .}}
+
+{{define "content"}}
+    <div style="max-width: 400px; margin: 4rem auto; border: 1px solid var(--border); padding: 2rem; border-radius: 8px;">
+        <h2 style="text-align: center; margin-top: 0;">Login</h2>
+
+        {{if .Data.Error}}
+            <div class="alert">{{.Data.Error}}</div>
+        {{end}}
+
+        <form action="/login" method="POST">
+            <div style="margin-bottom: 1rem;">
+                <label for="email" style="display: block; margin-bottom: 5px;">Email</label>
+                <input type="email" name="email" id="email" required autofocus>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label for="password" style="display: block; margin-bottom: 5px;">Password</label>
+                <input type="password" name="password" id="password" required>
+            </div>
+
+            <button type="submit" class="btn" style="width: 100%;">Sign In</button>
+        </form>
+    </div>
+{{end}}
