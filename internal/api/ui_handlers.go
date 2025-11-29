@@ -55,28 +55,26 @@ func (s *Server) uiRenderArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if s.PluginManager != nil {
-		if s.PluginManager.HasPlugins() {
-			pluginCtx := map[string]any{
-				"User": getUserFromContext(r.Context()),
-				"Slug": slug,
-			}
-
-			finalBody, err := executePlugins(
-				r.Context(),
-				s.PluginManager,
-				"onArticleRender",
-				wikiContent,
-				pluginCtx,
-				s.db.CreateLogEntry,
-			)
-			if err != nil {
-				s.uiError(w, r, fmt.Errorf("failed to execute plugins: %w", err))
-				return
-			}
-
-			wikiContent = finalBody
+	if s.hasActivePlugins() {
+		pluginCtx := map[string]any{
+			"User": getUserFromContext(r.Context()),
+			"Slug": slug,
 		}
+
+		finalBody, err := executePlugins(
+			r.Context(),
+			s.PluginManager,
+			"onArticleRender",
+			wikiContent,
+			pluginCtx,
+			s.db.CreateLogEntry,
+		)
+		if err != nil {
+			s.uiError(w, r, fmt.Errorf("failed to execute plugins: %w", err))
+			return
+		}
+
+		wikiContent = finalBody
 	}
 
 	resp.Body.PublicArticle.Data = wikiContent

@@ -14,19 +14,24 @@ Wikilite is a lightweight, extensible wiki engine written in Go. It allows users
 
 ## **Building**
 
-You can build Wikilite as a standalone API server or with the embedded UI.
+Wikilite releases include three build configurations:
 
-### **With UI (Recommended)**
-
-To include the HTML frontend:
+### **UI + Plugins (Recommended)**
+Includes the HTML frontend and plugin support:
 
 ```
-go build -tags ui -o wikilite cmd/main.go
+go build -tags "ui,plugins" -o wikilite cmd/main.go
+```
+
+### **Headless + Plugins**
+API server with plugin support, no UI:
+
+```
+go build -tags plugins -o wikilite cmd/main.go
 ```
 
 ### **Headless (API Only)**
-
-To build just the API server without the frontend assets:
+Minimal API server, no UI or plugins:
 
 ```
 go build -o wikilite cmd/main.go
@@ -34,7 +39,7 @@ go build -o wikilite cmd/main.go
 
 ## **Configuration**
 
-Create a .env file in the root directory (see .env.example). You **must** set the JWT_SECRET.
+Create an .env file in the root directory (see .env.example). You **must** set the JWT_SECRET.
 
 ```
 JWT_SECRET=your-super-secret-key  

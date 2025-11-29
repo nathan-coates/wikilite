@@ -97,8 +97,3 @@ func (s *Server) streamMarkdown(article *PublicArticle) *huma.StreamResponse {
 		},
 	}
 }
-
-// hasActivePlugins checks if the server has an active plugin manager with plugins.
-func (s *Server) hasActivePlugins() bool {
-	return s.PluginManager != nil && s.PluginManager.HasPlugins()
-}

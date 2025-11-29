@@ -1,3 +1,5 @@
+//go:build plugins
+
 package api
 
 import (
@@ -108,9 +110,14 @@ func TestRegisterPluginRoutes_NilPluginManager(t *testing.T) {
 	testDB := newTestDB(t)
 
 	server := newTestServer(t, testDB)
-	server.PluginManager = nil
 
-	server.registerPluginRoutes()
+	tempPluginDir := t.TempDir()
+	tempStoragePath := t.TempDir() + "/plugin_storage.db"
+
+	err := server.registerPluginRoutes(tempPluginDir, tempStoragePath, "")
+	require.NoError(t, err)
+
+	require.NotNil(t, server.PluginManager)
 }
 
 func TestRegisterPluginRoutes_NoPlugins(t *testing.T) {
@@ -118,9 +125,14 @@ func TestRegisterPluginRoutes_NoPlugins(t *testing.T) {
 
 	server := newTestServer(t, testDB)
 
-	server.PluginManager = nil // No plugins loaded
+	tempPluginDir := t.TempDir()
+	tempStoragePath := t.TempDir() + "/plugin_storage.db"
 
-	server.registerPluginRoutes()
+	err := server.registerPluginRoutes(tempPluginDir, tempStoragePath, "")
+	require.NoError(t, err)
+
+	require.NotNil(t, server.PluginManager)
+	require.Empty(t, server.PluginManager.Plugins)
 }
 
 func TestPluginActionInput_Validation(t *testing.T) {

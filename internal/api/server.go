@@ -116,17 +116,10 @@ func NewServer(
 	}
 
 	if pluginPath != "" {
-		if pluginStoragePath == "" {
-			pluginStoragePath = "plugin_storage"
-		}
-
-		pluginManger, err := plugin.NewManager(pluginStoragePath, pluginPath, jsPkgsPath)
+		err = server.registerPluginRoutes(pluginPath, pluginStoragePath, jsPkgsPath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to initialize plugin manager: %w", err)
+			return nil, err
 		}
-
-		server.PluginManager = pluginManger
-		server.registerPluginRoutes()
 	}
 
 	htmlCache := ttlcache.New[string, string](

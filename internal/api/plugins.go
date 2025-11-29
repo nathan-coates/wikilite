@@ -1,3 +1,5 @@
+//go:build plugins
+
 package api
 
 import (
@@ -52,10 +54,17 @@ func executePlugins(
 }
 
 // registerPluginRoutes registers routes specifically for plugins to receive data.
-func (s *Server) registerPluginRoutes() {
-	if s.PluginManager == nil || !s.PluginManager.HasPlugins() {
-		return
+func (s *Server) registerPluginRoutes(pluginPath, pluginStoragePath, jsPkgsPath string) error {
+	if pluginStoragePath == "" {
+		pluginStoragePath = "plugin_storage"
 	}
+
+	pluginManger, err := plugin.NewManager(pluginStoragePath, pluginPath, jsPkgsPath)
+	if err != nil {
+		return fmt.Errorf("failed to initialize plugin manager: %w", err)
+	}
+
+	s.PluginManager = pluginManger
 
 	huma.Register(s.api, huma.Operation{
 		OperationID: "execute-plugin-action",
@@ -66,6 +75,8 @@ func (s *Server) registerPluginRoutes() {
 		Tags:        []string{"Plugins"},
 		Security:    []map[string][]string{{"bearer": {}}},
 	}, s.handlePluginAction)
+
+	return nil
 }
 
 // handlePluginAction bridges HTTP requests to the plugin JS runtime.
@@ -115,4 +126,9 @@ func (s *Server) handlePluginAction(
 	resp.Body = result
 
 	return resp, nil
+}
+
+// hasActivePlugins checks if the server has an active plugin manager with plugins.
+func (s *Server) hasActivePlugins() bool {
+	return s.PluginManager != nil && s.PluginManager.HasPlugins()
 }

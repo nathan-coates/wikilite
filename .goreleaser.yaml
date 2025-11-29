@@ -22,13 +22,30 @@ builds:
     ldflags:
       - -s -w
 
-  - id: ui
-    binary: wikilite-ui
+  - id: headless-plugins
+    binary: wikilite-plugins
     main: ./cmd/main.go
     env:
       - CGO_ENABLED=0
     flags:
-      - -tags=ui
+      - -tags=plugins
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+
+  - id: ui-plugins
+    binary: wikilite-ui-plugins
+    main: ./cmd/main.go
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -tags=ui,plugins
     goos:
       - linux
       - windows
@@ -48,7 +65,9 @@ archives:
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
       {{- if .Arm }}v{{ .Arm }}{{ end }}
-      {{- if eq .Binary "wikilite-ui" }}_ui{{ end }}
+      {{- if eq .Binary "wikilite-ui-plugins" }}_ui_plugins
+      {{- else if eq .Binary "wikilite-plugins" }}_plugins
+      {{- else if eq .Binary "wikilite-ui" }}_ui{{ end }}
     format_overrides:
       - goos: windows
         formats: [zip]
