@@ -29,6 +29,7 @@ func newTestDB(t *testing.T) *DB {
 		(*models.History)(nil),
 		(*models.SystemLog)(nil),
 		(*models.Link)(nil),
+		(*models.BackupCode)(nil),
 	}
 
 	for _, model := range modelsToCreate {

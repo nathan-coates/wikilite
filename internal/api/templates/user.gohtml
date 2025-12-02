@@ -9,6 +9,11 @@
         <strong>Role:</strong> {{formatRole .User.Role}}
     </div>
 
+    <h2>Two-Factor Authentication</h2>
+    <p>
+        <a href="/user/otp" class="btn">Manage 2FA Settings</a>
+    </p>
+
     <h2>Update Password</h2>
     <form action="/user" method="POST">
         <label for="current_password">Current Password</label>

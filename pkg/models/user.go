@@ -29,6 +29,7 @@ type User struct {
 	Name      string    `bun:"name,notnull"                                          json:"name"`
 	Email     string    `bun:"email,unique,notnull"                                  json:"email"`
 	Hash      string    `bun:"hash"                                                  json:"-"`
+	OTPSecret string    `bun:"otp_secret"                                            json:"-"`
 
 	Id         int      `bun:"id,pk,autoincrement"               json:"id"`
 	Role       UserRole `bun:"role,notnull"                      json:"role"`

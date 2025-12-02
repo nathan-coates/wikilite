@@ -1,0 +1,110 @@
+{{template "base" .}}
+
+{{define "Title"}}OTP Settings{{end}}
+
+{{define "content"}}
+    <h1>Two-Factor Authentication</h1>
+    
+    {{if .Data.Error}}
+        <div class="error" style="color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; margin-bottom: 1rem; border-radius: 4px;">{{.Data.Error}}</div>
+    {{end}}
+
+    {{if .Data.Success}}
+        <div class="success" style="color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; padding: 10px; margin-bottom: 1rem; border-radius: 4px;">{{.Data.Success}}</div>
+    {{end}}
+
+    <div class="otp-section">
+        <h2>Current Status</h2>
+        <div class="meta">
+            <strong>Status:</strong> 
+            {{if .User.OTPSecret}}
+                <span style="color: green;">✓ Enabled</span>
+            {{else}}
+                <span style="color: red;">✗ Disabled</span>
+            {{end}}
+        </div>
+    </div>
+
+    {{if not .User.OTPSecret}}
+        <div class="otp-section">
+            <h2>Enable Two-Factor Authentication</h2>
+            <p>Two-factor authentication adds an extra layer of security to your account by requiring a verification code in addition to your password.</p>
+            
+            <form action="/user/otp/enroll" method="POST" id="enrollForm">
+                <label for="password">Confirm your password</label>
+                <input type="password" id="password" name="password" required>
+                <button type="submit" class="btn">Enable 2FA</button>
+            </form>
+        </div>
+    {{else}}
+        <div class="otp-section">
+            <h2>Disable Two-Factor Authentication</h2>
+            <p>Disabling 2FA will make your account less secure. You will no longer need to enter a verification code when logging in.</p>
+            
+            <form action="/user/otp/disable" method="POST" id="disableForm" onsubmit="return confirm('Are you sure you want to disable two-factor authentication?')">
+                <button type="submit" class="btn btn-danger">Disable 2FA</button>
+            </form>
+        </div>
+    {{end}}
+
+    <div class="otp-section">
+        <h2>About Two-Factor Authentication</h2>
+        <ul>
+            <li>Uses Time-based One-Time Passwords (TOTP)</li>
+            <li>Compatible with Google Authenticator, Authy, and other TOTP apps</li>
+            <li>Provides backup codes for account recovery</li>
+            <li>Significantly improves account security</li>
+        </ul>
+    </div>
+
+    <style>
+        .otp-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .otp-section:last-child {
+            border-bottom: none;
+        }
+        
+        .btn-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+    </style>
+
+    <script>
+        document.getElementById('enrollForm')?.addEventListener('submit', function(_) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Enrolling...';
+            submitBtn.disabled = true;
+
+            setTimeout(() => {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }, 5000);
+        });
+
+        document.getElementById('disableForm')?.addEventListener('submit', function(_) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Disabling...';
+            submitBtn.disabled = true;
+
+            setTimeout(() => {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }, 5000);
+        });
+
+
+    </script>
+{{end}}

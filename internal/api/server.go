@@ -37,6 +37,7 @@ type Server struct {
 	PluginManager *plugin.Manager
 
 	htmlCache      *ttlcache.Cache[string, string]
+	otpCache       *ttlcache.Cache[string, string]
 	jwksURL        string
 	externalIssuer string
 	jwtEmailClaim  string
@@ -133,7 +134,14 @@ func NewServer(
 	)
 	go htmlCache.Start()
 
+	otpCache := ttlcache.New[string, string](
+		ttlcache.WithTTL[string, string](10*time.Minute),
+		ttlcache.WithCapacity[string, string](1000),
+	)
+	go otpCache.Start()
+
 	server.htmlCache = htmlCache
+	server.otpCache = otpCache
 
 	return server, nil
 }
@@ -165,6 +173,10 @@ func (s *Server) Shutdown(ctx context.Context) error {
 func (s *Server) Close() error {
 	if s.htmlCache != nil {
 		s.htmlCache.Stop()
+	}
+
+	if s.otpCache != nil {
+		s.otpCache.Stop()
 	}
 
 	if s.PluginManager != nil {

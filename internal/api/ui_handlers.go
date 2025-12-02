@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
@@ -139,14 +140,20 @@ func (s *Server) uiRenderPastVersion(w http.ResponseWriter, r *http.Request) {
 		Title:   article.Title,
 		Slug:    article.Slug,
 		Version: version,
-		Data:    buf.String(), // Use the rendered HTML
+		Data:    buf.String(),
 	}
 	s.renderWithUser(w, r, "article.gohtml", viewData)
 }
 
 // uiRenderLogin renders the login page.
 func (s *Server) uiRenderLogin(w http.ResponseWriter, r *http.Request) {
-	s.renderWithUser(w, r, "login.gohtml", map[string]string{})
+	data := map[string]string{}
+
+	if r.URL.Query().Get("error") == "1" {
+		data["Error"] = "Invalid credentials"
+	}
+
+	s.renderWithUser(w, r, "login.gohtml", data)
 }
 
 // uiHandleLoginSubmit handles the submission of the login form.
@@ -160,15 +167,30 @@ func (s *Server) uiHandleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	input := &LoginInput{}
 	input.Body.Email = r.FormValue("email")
 	input.Body.Password = r.FormValue("password")
+	input.Body.OTP = r.FormValue("otp")
 
 	resp, err := s.handleLogin(r.Context(), input)
 	if err != nil {
+		if r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+			w.Header().Set("Content-Type", "text/plain")
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
+
 		s.renderWithUser(w, r, "login.gohtml", map[string]string{"Error": "Invalid credentials"})
 		return
 	}
 
 	for _, cookieStr := range resp.Cookies {
 		w.Header().Add("Set-Cookie", cookieStr)
+	}
+
+	if r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("Login successful"))
+		return
 	}
 
 	http.Redirect(w, r, "/dashboard", http.StatusFound)
@@ -556,5 +578,168 @@ func (s *Server) uiActionUpdateUserPassword(w http.ResponseWriter, r *http.Reque
 		r,
 		"user.gohtml",
 		map[string]string{"Success": "Password updated successfully"},
+	)
+}
+
+// uiRenderOTPSettings renders the OTP settings page.
+func (s *Server) uiRenderOTPSettings(w http.ResponseWriter, r *http.Request) {
+	data := map[string]string{}
+
+	if r.URL.Query().Get("success") == "1" {
+		data["Success"] = "Two-factor authentication enabled successfully"
+	}
+
+	s.renderWithUser(w, r, "otp_settings.gohtml", data)
+}
+
+// uiHandleOTPStartEnrollment handles starting the OTP enrollment process.
+func (s *Server) uiHandleOTPStartEnrollment(w http.ResponseWriter, r *http.Request) {
+	user := getUserFromContext(r.Context())
+	if user == nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		s.uiError(w, r, huma.Error400BadRequest("Bad form data"))
+		return
+	}
+
+	password := r.FormValue("password")
+	if password == "" {
+		s.renderWithUser(
+			w,
+			r,
+			"otp_settings.gohtml",
+			map[string]string{"Error": "Password is required"},
+		)
+		return
+	}
+
+	input := &OTPStartEnrollmentInput{}
+	input.Body.Password = password
+
+	resp, err := s.handleStartOTPEnrollment(r.Context(), input)
+	if err != nil {
+		s.renderWithUser(
+			w,
+			r,
+			"otp_settings.gohtml",
+			map[string]string{"Error": "Invalid password"},
+		)
+		return
+	}
+
+	data := struct {
+		QRCode      template.URL
+		Secret      string
+		BackupCodes []string
+	}{
+		QRCode:      template.URL(resp.Body.QRCode),
+		Secret:      resp.Body.Code,
+		BackupCodes: resp.Body.BackupCodes,
+	}
+
+	s.renderWithUser(w, r, "otp_enroll.gohtml", data)
+}
+
+// uiRenderOTPEnroll renders the OTP enrollment page.
+func (s *Server) uiRenderOTPEnroll(w http.ResponseWriter, r *http.Request) {
+	s.renderWithUser(w, r, "otp_enroll.gohtml", nil)
+}
+
+// uiHandleOTPVerify handles OTP verification during enrollment.
+func (s *Server) uiHandleOTPVerify(w http.ResponseWriter, r *http.Request) {
+	user := getUserFromContext(r.Context())
+	if user == nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		s.uiError(w, r, huma.Error400BadRequest("Bad form data"))
+		return
+	}
+
+	code := r.FormValue("code")
+	if code == "" {
+		if r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+			w.Header().Set("Content-Type", "text/plain")
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("Verification code is required"))
+			return
+		}
+		s.renderWithUser(
+			w,
+			r,
+			"otp_enroll.gohtml",
+			map[string]string{"Error": "Verification code is required"},
+		)
+		return
+	}
+
+	input := &OTPCompleteEnrollmentInput{}
+	input.Code = code
+
+	_, err = s.handleCompleteOTPEnrollment(r.Context(), input)
+	if err != nil {
+		if r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+			w.Header().Set("Content-Type", "text/plain")
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("Invalid verification code"))
+			return
+		}
+		s.renderWithUser(
+			w,
+			r,
+			"otp_enroll.gohtml",
+			map[string]string{"Error": "Invalid verification code"},
+		)
+		return
+	}
+
+	if r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("Two-factor authentication enabled successfully"))
+		return
+	}
+
+	s.renderWithUser(
+		w,
+		r,
+		"otp_settings.gohtml",
+		map[string]string{"Success": "Two-factor authentication enabled successfully"},
+	)
+}
+
+// uiHandleOTPDisable handles disabling OTP.
+func (s *Server) uiHandleOTPDisable(w http.ResponseWriter, r *http.Request) {
+	user := getUserFromContext(r.Context())
+	if user == nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	input := &OTPRemoveInput{}
+
+	_, err := s.handleRemoveOTP(r.Context(), input)
+	if err != nil {
+		s.renderWithUser(
+			w,
+			r,
+			"otp_settings.gohtml",
+			map[string]string{"Error": "Failed to disable two-factor authentication"},
+		)
+		return
+	}
+
+	s.renderWithUser(
+		w,
+		r,
+		"otp_settings.gohtml",
+		map[string]string{"Success": "Two-factor authentication disabled successfully"},
 	)
 }

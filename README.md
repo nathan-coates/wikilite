@@ -43,6 +43,14 @@ Wikilite supports the following authentication methods when using local auth:
 * User/Password that sets a local JWT access token in an `httpOnly` cookie - ```/api/login```.
 * User/Password that returns a local JWT access token for direct usage in API calls = ```/api/login/token```.
 
+#### **Two-Factor Authentication (2FA)**
+Users can enable TOTP-based two-factor authentication for enhanced security. Includes backup codes for account recovery and is compatible with most authenticator apps.
+
+In the built-in UI:
+* Navigate to `/user` to access account settings
+* Enable 2FA and scan the QR code with your authenticator app
+* Save backup codes for account recovery
+
 ### **External IdP Auth**
 When using external IdP auth, Wikilite supports the following methods:
 * JWT access token only if it includes an email address claim in ```Authorization: Bearer``` in the request header.

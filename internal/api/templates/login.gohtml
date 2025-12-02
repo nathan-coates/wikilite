@@ -8,7 +8,7 @@
             <div class="alert">{{.Data.Error}}</div>
         {{end}}
 
-        <form action="/login" method="POST">
+        <form action="/login" method="POST" id="loginForm">
             <div style="margin-bottom: 1rem;">
                 <label for="email" style="display: block; margin-bottom: 5px;">Email</label>
                 <input type="email" name="email" id="email" required autofocus>
@@ -19,7 +19,75 @@
                 <input type="password" name="password" id="password" required>
             </div>
 
+            <div id="otpField" style="margin-bottom: 1.5rem; display: none;">
+                <label for="otp" style="display: block; margin-bottom: 5px;">Two-Factor Authentication Code</label>
+                <input type="text" name="otp" id="otp" pattern="[0-9]{6}" maxlength="6" placeholder="000000" autocomplete="one-time-code">
+                <small style="color: #666;">Enter the 6-digit code from your authenticator app</small>
+            </div>
+
             <button type="submit" class="btn" style="width: 100%;">Sign In</button>
         </form>
     </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Signing in...';
+            submitBtn.disabled = true;
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: new URLSearchParams(data)
+                });
+                
+                if (response.ok) {
+                    window.location.href = '/dashboard';
+                    return;
+                }
+                
+                const responseText = await response.text();
+
+                if (response.status === 400 && responseText.includes('OTP code required')) {
+                    document.getElementById('otpField').style.display = 'block';
+                    document.getElementById('otp').focus();
+
+                    const existingAlert = document.querySelector('.alert');
+                    if (existingAlert) {
+                        existingAlert.remove();
+                    }
+                    
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert';
+                    alertDiv.textContent = 'Two-factor authentication code required';
+                    alertDiv.style.backgroundColor = '#fff3cd';
+                    alertDiv.style.color = '#856404';
+                    alertDiv.style.padding = '10px';
+                    alertDiv.style.marginBottom = '1rem';
+                    alertDiv.style.borderRadius = '4px';
+                    alertDiv.style.border = '1px solid #ffeaa7';
+                    
+                    this.insertBefore(alertDiv, this.firstChild);
+                } else {
+                    window.location.href = '/login?error=1';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                window.location.href = '/login?error=1';
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
 {{end}}
