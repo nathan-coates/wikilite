@@ -1,0 +1,193 @@
+{{template "base" .}}
+
+{{define "Title"}}Enable Two-Factor Authentication{{end}}
+
+{{define "content"}}
+    <h1>Enable Two-Factor Authentication</h1>
+    
+    {{if .Data}}
+        {{if eq (printf "%T" .Data) "map[string]string"}}
+            {{if index .Data "Error"}}
+                <div class="error" style="color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; margin-bottom: 1rem; border-radius: 4px;">{{index .Data "Error"}}</div>
+            {{end}}
+        {{end}}
+    {{end}}
+
+    {{if and .Data .Data.QRCode}}
+        <div class="otp-section">
+            <h2>Step 1: Scan QR Code</h2>
+            <p>Use your authenticator app (Google Authenticator, Authy, etc.) to scan this QR code:</p>
+            
+            <div class="qr-code-container">
+                <img src="{{.Data.QRCode}}" alt="QR Code for OTP Setup" style="max-width: 256px; height: auto; border: 1px solid #ccc; padding: 10px; background: white;">
+            </div>
+            
+            <details>
+                <summary>Can't scan? Enter manually</summary>
+                <p>Enter this secret key in your authenticator app:</p>
+                <code style="word-break: break-all; background: #f5f5f5; padding: 10px; display: block; font-family: monospace;">{{.Data.Secret}}</code>
+            </details>
+        </div>
+
+        <div class="otp-section">
+            <h2>Step 2: Save Backup Codes</h2>
+            <p><strong>Important:</strong> Save these backup codes in a secure location. You can use them to access your account if you lose access to your authenticator device.</p>
+            
+            <div class="backup-codes">
+                {{range .Data.BackupCodes}}
+                    <code class="backup-code">{{.}}</code>
+                {{end}}
+            </div>
+            
+            <p style="color: #666; font-size: 0.9em;">Each backup code can only be used once.</p>
+        </div>
+
+        <div class="otp-section">
+            <h2>Step 3: Verify Setup</h2>
+            <p>Enter the 6-digit code from your authenticator app to complete the setup:</p>
+            
+            <form action="/user/otp/verify" method="POST" id="verifyForm">
+                <label for="code">Verification Code</label>
+                <input type="text" id="code" name="code" pattern="[0-9]{6}" maxlength="6" placeholder="000000" required autocomplete="one-time-code">
+                <button type="submit" class="btn">Verify and Enable 2FA</button>
+            </form>
+        </div>
+    {{else}}
+        <div class="otp-section">
+            <p>Please start the enrollment process from the <a href="/user/otp">OTP settings page</a>.</p>
+        </div>
+    {{end}}
+
+    <div class="otp-section">
+        <h2>Troubleshooting</h2>
+        <ul>
+            <li><strong>Code not working?</strong> Make sure your device's time is correct and synchronized.</li>
+            <li><strong>Lost your device?</strong> Keep your backup codes safe to recover access.</li>
+            <li><strong>Need help?</strong> Contact an administrator if you're locked out of your account.</li>
+        </ul>
+    </div>
+
+    <style>
+        .qr-code-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .backup-codes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .backup-code {
+            display: block;
+            text-align: center;
+            padding: 8px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .otp-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .otp-section:last-child {
+            border-bottom: none;
+        }
+        
+        details {
+            margin: 15px 0;
+        }
+        
+        summary {
+            cursor: pointer;
+            color: #0066cc;
+            font-weight: bold;
+        }
+    </style>
+
+    {{if and .Data .Data.QRCode}}
+    <script>
+        document.getElementById('verifyForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Verifying...';
+            submitBtn.disabled = true;
+
+            const existingError = document.querySelector('.error');
+            if (existingError) {
+                existingError.remove();
+            }
+            
+            try {
+                const response = await fetch('/user/otp/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: new URLSearchParams(data)
+                });
+                
+                if (response.ok) {
+                    window.location.href = '/user/otp?success=1';
+                } else {
+                    const errorText = await response.text();
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'error';
+                    errorDiv.style.color = '#721c24';
+                    errorDiv.style.backgroundColor = '#f8d7da';
+                    errorDiv.style.border = '1px solid #f5c6cb';
+                    errorDiv.style.padding = '10px';
+                    errorDiv.style.marginBottom = '1rem';
+                    errorDiv.style.borderRadius = '4px';
+                    errorDiv.textContent = errorText || 'Invalid verification code. Please try again.';
+                    
+                    this.insertBefore(errorDiv, this.firstChild);
+                }
+            } catch (error) {
+                console.error('Verification error:', error);
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error';
+                errorDiv.style.color = '#721c24';
+                errorDiv.style.backgroundColor = '#f8d7da';
+                errorDiv.style.border = '1px solid #f5c6cb';
+                errorDiv.style.padding = '10px';
+                errorDiv.style.marginBottom = '1rem';
+                errorDiv.style.borderRadius = '4px';
+                errorDiv.textContent = 'An error occurred. Please try again.';
+                
+                this.insertBefore(errorDiv, this.firstChild);
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+    {{else}}
+    <script>
+        document.getElementById('verifyForm')?.addEventListener('submit', function(_) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Verifying...';
+            submitBtn.disabled = true;
+
+            setTimeout(() => {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }, 2000);
+        });
+    </script>
+    {{end}}
+{{end}}

@@ -116,6 +116,13 @@ func (s *Server) registerFrontendRoutes(mux *http.ServeMux) error {
 	mux.HandleFunc("GET /user", s.uiRenderUser)
 	mux.HandleFunc("POST /user", s.uiActionUpdateUserPassword)
 
+	// OTP
+	mux.HandleFunc("GET /user/otp", s.uiRenderOTPSettings)
+	mux.HandleFunc("POST /user/otp/enroll", s.uiHandleOTPStartEnrollment)
+	mux.HandleFunc("GET /user/otp/enroll", s.uiRenderOTPEnroll)
+	mux.HandleFunc("POST /user/otp/verify", s.uiHandleOTPVerify)
+	mux.HandleFunc("POST /user/otp/disable", s.uiHandleOTPDisable)
+
 	// Admin Actions
 	mux.HandleFunc("POST /wiki/{slug}/delete", s.uiActionDeleteArticle)
 	mux.HandleFunc("GET /admin/logs", s.uiRenderLogs)

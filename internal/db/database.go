@@ -46,7 +46,7 @@ func (h *dbLogger) BeforeQuery(ctx context.Context, _ *bun.QueryEvent) context.C
 }
 
 // AfterQuery logs the query to the log channel.
-func (h *dbLogger) AfterQuery(ctx context.Context, event *bun.QueryEvent) {
+func (h *dbLogger) AfterQuery(_ context.Context, event *bun.QueryEvent) {
 	query := event.Query
 	if len(query) > 1000 {
 		query = query[:1000] + "...(truncated)"
@@ -116,7 +116,7 @@ func New(mainDSN string, logDSN string) (*DB, error) {
 }
 
 // Ping checks the connectivity of both the main and log databases.
-func (d *DB) Ping(ctx context.Context) error {
+func (d *DB) Ping(_ context.Context) error {
 	err := d.DB.Ping()
 	if err != nil {
 		return fmt.Errorf("main db ping failed: %w", err)
@@ -149,6 +149,7 @@ func (d *DB) createTables(ctx context.Context) error {
 		(*models.Link)(nil),
 		(*models.Draft)(nil),
 		(*models.User)(nil),
+		(*models.BackupCode)(nil),
 	}
 
 	for _, model := range mainModels {
