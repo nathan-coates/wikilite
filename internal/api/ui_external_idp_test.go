@@ -24,6 +24,8 @@ func TestUIRenderExternalIDPDisabled(t *testing.T) {
 			"",
 			"",
 			"",
+			false,
+			false,
 		)
 		assert.NoError(t, err)
 
@@ -54,6 +56,8 @@ func TestRegisterFrontendRoutesWithExternalIDP(t *testing.T) {
 			"",
 			"",
 			"",
+			false,
+			false,
 		)
 		assert.NoError(t, err)
 
@@ -83,6 +87,8 @@ func TestRegisterFrontendRoutesWithExternalIDP(t *testing.T) {
 			"",
 			"",
 			"",
+			false,
+			false,
 		)
 		assert.NoError(t, err)
 

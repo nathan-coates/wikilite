@@ -71,6 +71,7 @@ JWT_SECRET=your-super-secret-key
 WIKI_NAME="My Wiki"
 DB_PATH=wiki.db
 LOG_DB_PATH=logs.db
+TRUST_PROXY_HEADERS=true # if behind a reverse proxy
 ```
 
 ### External IdP Support

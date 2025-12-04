@@ -28,6 +28,8 @@ type config struct {
 	PluginPath        string
 	PluginStoragePath string
 	JSPkgsPath        string
+	Production        bool
+	TrustProxyHeaders bool
 }
 
 // NewRootCmd creates the entire command tree and returns the root command.
@@ -52,6 +54,8 @@ func NewRootCmd() *cobra.Command {
 				PluginPath:        os.Getenv("PLUGIN_PATH"),
 				PluginStoragePath: os.Getenv("PLUGIN_STORAGE_PATH"),
 				JSPkgsPath:        os.Getenv("JSPKGS_PATH"),
+				Production:        !(os.Getenv("IS_DEVELOPMENT") == "true"),
+				TrustProxyHeaders: os.Getenv("TRUST_PROXY_HEADERS") == "true",
 			}
 
 			if state.Config.JWTSecret == "" && state.Config.JWKSURL == "" {
