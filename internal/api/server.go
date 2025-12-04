@@ -46,6 +46,9 @@ type Server struct {
 	LocalIssuer string
 
 	jwtSecret []byte
+
+	production        bool
+	trustProxyHeaders bool
 }
 
 // isExternalIDPEnabled returns true if external IDP support is configured.
@@ -56,14 +59,16 @@ func (s *Server) isExternalIDPEnabled() bool {
 // NewServer creates a new instance of the server.
 func NewServer(
 	database *db.DB,
-	jwtSecret string,
-	jwksURL string,
-	jwtIssuer string,
-	jwtEmailClaim string,
-	wikiName string,
-	pluginPath string,
-	pluginStoragePath string,
+	jwtSecret,
+	jwksURL,
+	jwtIssuer,
+	jwtEmailClaim,
+	wikiName,
+	pluginPath,
+	pluginStoragePath,
 	jsPkgsPath string,
+	production,
+	trustProxyHeaders bool,
 ) (*Server, error) {
 	router := http.NewServeMux()
 
@@ -88,17 +93,19 @@ func NewServer(
 	}
 
 	server := &Server{
-		db:              database,
-		router:          router,
-		api:             api,
-		renderer:        mdRenderer,
-		articleTemplate: tmpl,
-		jwtSecret:       []byte(jwtSecret),
-		WikiName:        wikiName,
-		LocalIssuer:     localIssuer,
-		jwksURL:         jwksURL,
-		externalIssuer:  jwtIssuer,
-		jwtEmailClaim:   jwtEmailClaim,
+		db:                database,
+		router:            router,
+		api:               api,
+		renderer:          mdRenderer,
+		articleTemplate:   tmpl,
+		jwtSecret:         []byte(jwtSecret),
+		WikiName:          wikiName,
+		LocalIssuer:       localIssuer,
+		jwksURL:           jwksURL,
+		externalIssuer:    jwtIssuer,
+		jwtEmailClaim:     jwtEmailClaim,
+		production:        production,
+		trustProxyHeaders: trustProxyHeaders,
 	}
 
 	if jwksURL != "" {
@@ -148,7 +155,8 @@ func NewServer(
 
 // Start starts the HTTP server.
 func (s *Server) Start(addr string) error {
-	handler := s.LoggerMiddleware(s.router)
+	handler := s.hardeningMiddleware(s.router)
+	handler = s.LoggerMiddleware(handler)
 	handler = s.authMiddleware(handler)
 	handler = s.contextMiddleware(handler)
 

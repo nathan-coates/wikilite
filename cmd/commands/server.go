@@ -66,6 +66,8 @@ func newServerCmd(state *cliState) *cobra.Command {
 				state.Config.PluginPath,
 				state.Config.PluginStoragePath,
 				state.Config.JSPkgsPath,
+				state.Config.Production,
+				state.Config.TrustProxyHeaders,
 			)
 			if err != nil {
 				log.Fatalf("Failed to create server: %v", err)

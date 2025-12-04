@@ -45,6 +45,8 @@ func TestServerCreationWithExternalIDP(t *testing.T) {
 		"",
 		"",
 		"",
+		false,
+		false,
 	)
 
 	assert.NoError(t, err)
@@ -63,6 +65,8 @@ func TestServerCreationWithoutExternalIDP(t *testing.T) {
 		"",
 		"",
 		"",
+		false,
+		false,
 	)
 
 	assert.NoError(t, err)

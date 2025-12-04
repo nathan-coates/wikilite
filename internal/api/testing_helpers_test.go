@@ -58,6 +58,8 @@ func newTestServer(t *testing.T, database *db.DB) *Server {
 		"",
 		"",
 		"",
+		false,
+		false,
 	)
 	require.NoError(t, err, "Failed to create new test server")
 	require.NotNil(t, server, "Server object should not be nil")
@@ -83,6 +85,8 @@ func newTestServerWithPlugins(t *testing.T, database *db.DB, pluginPath string) 
 		pluginPath,
 		tempPluginStorage,
 		"",
+		false,
+		false,
 	)
 	require.NoError(t, err, "Failed to create new test server with plugins")
 	require.NotNil(t, server, "Server object should not be nil")
