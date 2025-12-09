@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
+	"wikilite/internal/api"
 	"wikilite/internal/db"
 
 	"github.com/joho/godotenv"
@@ -30,11 +32,26 @@ type config struct {
 	JSPkgsPath        string
 	Production        bool
 	TrustProxyHeaders bool
+	InsecureCookies   bool
+	Port              int
 }
 
 // NewRootCmd creates the entire command tree and returns the root command.
 func NewRootCmd() *cobra.Command {
 	state := &cliState{}
+
+	var portNumber int
+	port := os.Getenv("PORT")
+	if port != "" {
+		cnvPort, err := strconv.Atoi(port)
+		if err != nil {
+			log.Fatalf("Invalid PORT value: %v", err)
+		}
+
+		portNumber = cnvPort
+	} else {
+		portNumber = api.DefaultPort
+	}
 
 	rootCmd := &cobra.Command{
 		Use:   "wikilite",
@@ -56,6 +73,8 @@ func NewRootCmd() *cobra.Command {
 				JSPkgsPath:        os.Getenv("JSPKGS_PATH"),
 				Production:        !(os.Getenv("IS_DEVELOPMENT") == "true"),
 				TrustProxyHeaders: os.Getenv("TRUST_PROXY_HEADERS") == "true",
+				InsecureCookies:   os.Getenv("INSECURE_COOKIES") == "true",
+				Port:              portNumber,
 			}
 
 			if state.Config.JWTSecret == "" && state.Config.JWKSURL == "" {

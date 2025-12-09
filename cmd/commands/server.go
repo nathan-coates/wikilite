@@ -56,25 +56,26 @@ func newServerCmd(state *cliState) *cobra.Command {
 				wikiName = state.Config.WikiName
 			}
 
-			server, err := api.NewServer(
-				state.DB,
-				state.Config.JWTSecret,
-				state.Config.JWKSURL,
-				state.Config.JWTIssuer,
-				state.Config.JWTEmailClaim,
-				wikiName,
-				state.Config.PluginPath,
-				state.Config.PluginStoragePath,
-				state.Config.JSPkgsPath,
-				state.Config.Production,
-				state.Config.TrustProxyHeaders,
-			)
+			server, err := api.NewServer(api.ServerConfig{
+				Database:          state.DB,
+				JwtSecret:         state.Config.JWTSecret,
+				JwksURL:           state.Config.JWKSURL,
+				JwtIssuer:         state.Config.JWTIssuer,
+				JwtEmailClaim:     state.Config.JWTEmailClaim,
+				WikiName:          wikiName,
+				PluginPath:        state.Config.PluginPath,
+				PluginStoragePath: state.Config.PluginStoragePath,
+				JsPkgsPath:        state.Config.JSPkgsPath,
+				Production:        state.Config.Production,
+				TrustProxyHeaders: state.Config.TrustProxyHeaders,
+				InsecureCookies:   state.Config.InsecureCookies,
+				Port:              state.Config.Port,
+			})
 			if err != nil {
 				log.Fatalf("Failed to create server: %v", err)
 			}
 
-			port := ":8080"
-			log.Printf("Starting %s on %s", wikiName, port)
+			log.Printf("Starting %s on :%d", wikiName, state.Config.Port)
 
 			if state.Config.JWKSURL != "" {
 				log.Printf("Auth Mode: External IDP (JWKS: %s)", state.Config.JWKSURL)
@@ -87,7 +88,7 @@ func newServerCmd(state *cliState) *cobra.Command {
 			signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
 			go func() {
-				err := server.Start(port)
+				err = server.Start()
 				if err != nil && !errors.Is(err, http.ErrServerClosed) {
 					log.Printf("Server failed: %v", err)
 					close(stop)

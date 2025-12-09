@@ -233,7 +233,7 @@ func (s *Server) handleLogin(ctx context.Context, input *LoginInput) (*AuthOutpu
 		Path:     "/",
 		Expires:  time.Now().Add(SessionDuration),
 		HttpOnly: true,
-		Secure:   true,
+		Secure:   !s.insecureCookies,
 		SameSite: http.SameSiteStrictMode,
 	}
 

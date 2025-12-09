@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// newTestDB creates a new DB instance with a temporary file-based database.
+// newTestDB creates a new DB instance with a temporary file-based Database.
 func newTestDB(t *testing.T) *db.DB {
 	t.Helper()
 
@@ -32,7 +32,7 @@ func newTestDB(t *testing.T) *db.DB {
 	require.NoError(
 		t,
 		database.Seed(context.Background(), adminUser, "Home"),
-		"Failed to seed database",
+		"Failed to seed Database",
 	)
 
 	t.Cleanup(func() {
@@ -48,19 +48,21 @@ func newTestDB(t *testing.T) *db.DB {
 func newTestServer(t *testing.T, database *db.DB) *Server {
 	t.Helper()
 
-	server, err := NewServer(
-		database,
-		"test-secret",
-		"",
-		"",
-		"",
-		"Test Wiki",
-		"",
-		"",
-		"",
-		false,
-		false,
-	)
+	config := ServerConfig{
+		Database:          database,
+		JwtSecret:         "test-secret",
+		JwksURL:           "",
+		JwtIssuer:         "",
+		JwtEmailClaim:     "",
+		WikiName:          "Test Wiki",
+		PluginPath:        "",
+		PluginStoragePath: "",
+		JsPkgsPath:        "",
+		Production:        false,
+		TrustProxyHeaders: false,
+	}
+
+	server, err := NewServer(config)
 	require.NoError(t, err, "Failed to create new test server")
 	require.NotNil(t, server, "Server object should not be nil")
 
@@ -68,26 +70,28 @@ func newTestServer(t *testing.T, database *db.DB) *Server {
 }
 
 // newTestServerWithPlugins creates a new server instance with a plugin manager for testing.
-// It handles cleanup of the plugin storage database and plugin manager.
+// It handles cleanup of the plugin storage Database and plugin manager.
 func newTestServerWithPlugins(t *testing.T, database *db.DB, pluginPath string) *Server {
 	t.Helper()
 
 	// Use a temporary plugin storage path for testing
 	tempPluginStorage := t.TempDir() + "/plugin_storage.db"
 
-	server, err := NewServer(
-		database,
-		"test-secret",
-		"",
-		"",
-		"",
-		"Test Wiki",
-		pluginPath,
-		tempPluginStorage,
-		"",
-		false,
-		false,
-	)
+	config := ServerConfig{
+		Database:          database,
+		JwtSecret:         "test-secret",
+		JwksURL:           "",
+		JwtIssuer:         "",
+		JwtEmailClaim:     "",
+		WikiName:          "Test Wiki",
+		PluginPath:        pluginPath,
+		PluginStoragePath: tempPluginStorage,
+		JsPkgsPath:        "",
+		Production:        false,
+		TrustProxyHeaders: false,
+	}
+
+	server, err := NewServer(config)
 	require.NoError(t, err, "Failed to create new test server with plugins")
 	require.NotNil(t, server, "Server object should not be nil")
 
