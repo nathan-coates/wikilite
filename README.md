@@ -72,6 +72,8 @@ WIKI_NAME="My Wiki"
 DB_PATH=wiki.db
 LOG_DB_PATH=logs.db
 TRUST_PROXY_HEADERS=true # if behind a reverse proxy
+INSECURE_COOKIES=true # if running on a local network with Docker without HTTPS
+PORT=8080 # useful for Docker deployments
 ```
 
 ### External IdP Support

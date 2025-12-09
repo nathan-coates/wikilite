@@ -35,19 +35,21 @@ func TestIsExternalIDPEnabled(t *testing.T) {
 }
 
 func TestServerCreationWithExternalIDP(t *testing.T) {
-	server, err := NewServer(
-		nil,
-		"test-secret",
-		"https://example.com/.well-known/jwks.json",
-		"https://example.com/",
-		"email",
-		"Test Wiki",
-		"",
-		"",
-		"",
-		false,
-		false,
-	)
+	config := ServerConfig{
+		Database:          nil,
+		JwtSecret:         "test-secret",
+		JwksURL:           "https://example.com/.well-known/jwks.json",
+		JwtIssuer:         "https://example.com/",
+		JwtEmailClaim:     "email",
+		WikiName:          "Test Wiki",
+		PluginPath:        "",
+		PluginStoragePath: "",
+		JsPkgsPath:        "",
+		Production:        false,
+		TrustProxyHeaders: false,
+	}
+
+	server, err := NewServer(config)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, server)
@@ -55,19 +57,21 @@ func TestServerCreationWithExternalIDP(t *testing.T) {
 }
 
 func TestServerCreationWithoutExternalIDP(t *testing.T) {
-	server, err := NewServer(
-		nil,
-		"test-secret",
-		"",
-		"",
-		"",
-		"Test Wiki",
-		"",
-		"",
-		"",
-		false,
-		false,
-	)
+	config := ServerConfig{
+		Database:          nil,
+		JwtSecret:         "test-secret",
+		JwksURL:           "",
+		JwtIssuer:         "",
+		JwtEmailClaim:     "",
+		WikiName:          "Test Wiki",
+		PluginPath:        "",
+		PluginStoragePath: "",
+		JsPkgsPath:        "",
+		Production:        false,
+		TrustProxyHeaders: false,
+	}
+
+	server, err := NewServer(config)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, server)

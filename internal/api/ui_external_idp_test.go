@@ -14,19 +14,20 @@ func TestUIRenderExternalIDPDisabled(t *testing.T) {
 	db := newTestDB(t)
 
 	t.Run("External IDP enabled - should show disabled page", func(t *testing.T) {
-		server, err := NewServer(
-			db,
-			"test-secret",
-			"https://example.com/.well-known/jwks.json",
-			"https://example.com/",
-			"email",
-			"Test Wiki",
-			"",
-			"",
-			"",
-			false,
-			false,
-		)
+		config := ServerConfig{
+			Database:          db,
+			JwtSecret:         "test-secret",
+			JwksURL:           "https://example.com/.well-known/jwks.json",
+			JwtIssuer:         "https://example.com/",
+			JwtEmailClaim:     "email",
+			WikiName:          "Test Wiki",
+			PluginPath:        "",
+			PluginStoragePath: "",
+			JsPkgsPath:        "",
+			Production:        false,
+			TrustProxyHeaders: false,
+		}
+		server, err := NewServer(config)
 		assert.NoError(t, err)
 
 		err = server.initTemplates()
@@ -46,19 +47,20 @@ func TestRegisterFrontendRoutesWithExternalIDP(t *testing.T) {
 	db := newTestDB(t)
 
 	t.Run("External IDP enabled - should only register disabled route", func(t *testing.T) {
-		server, err := NewServer(
-			db,
-			"test-secret",
-			"https://example.com/.well-known/jwks.json",
-			"https://example.com/",
-			"email",
-			"Test Wiki",
-			"",
-			"",
-			"",
-			false,
-			false,
-		)
+		config := ServerConfig{
+			Database:          db,
+			JwtSecret:         "test-secret",
+			JwksURL:           "https://example.com/.well-known/jwks.json",
+			JwtIssuer:         "https://example.com/",
+			JwtEmailClaim:     "email",
+			WikiName:          "Test Wiki",
+			PluginPath:        "",
+			PluginStoragePath: "",
+			JsPkgsPath:        "",
+			Production:        false,
+			TrustProxyHeaders: false,
+		}
+		server, err := NewServer(config)
 		assert.NoError(t, err)
 
 		err = server.initTemplates()
@@ -77,19 +79,20 @@ func TestRegisterFrontendRoutesWithExternalIDP(t *testing.T) {
 	})
 
 	t.Run("External IDP disabled - should register all routes", func(t *testing.T) {
-		server, err := NewServer(
-			db,
-			"test-secret",
-			"",
-			"",
-			"",
-			"Test Wiki",
-			"",
-			"",
-			"",
-			false,
-			false,
-		)
+		config := ServerConfig{
+			Database:          db,
+			JwtSecret:         "test-secret",
+			JwksURL:           "",
+			JwtIssuer:         "",
+			JwtEmailClaim:     "",
+			WikiName:          "Test Wiki",
+			PluginPath:        "",
+			PluginStoragePath: "",
+			JsPkgsPath:        "",
+			Production:        false,
+			TrustProxyHeaders: false,
+		}
+		server, err := NewServer(config)
 		assert.NoError(t, err)
 
 		err = server.initTemplates()

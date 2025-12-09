@@ -19,9 +19,26 @@ import (
 
 const (
 	DefaultWikiName = "WikiLite"
+	DefaultPort     = 8080
 	cacheTtl        = 30 * time.Minute
 	cacheSize       = 1000
 )
+
+type ServerConfig struct {
+	Database          *db.DB
+	JwtSecret         string
+	JwksURL           string
+	JwtIssuer         string
+	JwtEmailClaim     string
+	WikiName          string
+	PluginPath        string
+	PluginStoragePath string
+	JsPkgsPath        string
+	Production        bool
+	TrustProxyHeaders bool
+	InsecureCookies   bool
+	Port              int
+}
 
 // Server represents the main application server.
 type Server struct {
@@ -33,6 +50,7 @@ type Server struct {
 	articleTemplate   *template.Template
 	compiledTemplates map[string]*template.Template
 	httpServer        *http.Server
+	port              int
 
 	PluginManager *plugin.Manager
 
@@ -49,6 +67,7 @@ type Server struct {
 
 	production        bool
 	trustProxyHeaders bool
+	insecureCookies   bool
 }
 
 // isExternalIDPEnabled returns true if external IDP support is configured.
@@ -58,24 +77,14 @@ func (s *Server) isExternalIDPEnabled() bool {
 
 // NewServer creates a new instance of the server.
 func NewServer(
-	database *db.DB,
-	jwtSecret,
-	jwksURL,
-	jwtIssuer,
-	jwtEmailClaim,
-	wikiName,
-	pluginPath,
-	pluginStoragePath,
-	jsPkgsPath string,
-	production,
-	trustProxyHeaders bool,
+	config ServerConfig,
 ) (*Server, error) {
 	router := http.NewServeMux()
 
-	localIssuer := utils.ToKebabCase(wikiName)
+	localIssuer := utils.ToKebabCase(config.WikiName)
 
-	config := huma.DefaultConfig(wikiName+" API", "1.0.0")
-	config.Components.SecuritySchemes = map[string]*huma.SecurityScheme{
+	humaConfig := huma.DefaultConfig(config.WikiName+" API", "1.0.0")
+	humaConfig.Components.SecuritySchemes = map[string]*huma.SecurityScheme{
 		"bearer": {
 			Type:         "http",
 			Scheme:       "bearer",
@@ -83,7 +92,7 @@ func NewServer(
 		},
 	}
 
-	api := humago.New(router, config)
+	api := humago.New(router, humaConfig)
 
 	mdRenderer := markdown.NewRenderer()
 
@@ -93,25 +102,27 @@ func NewServer(
 	}
 
 	server := &Server{
-		db:                database,
+		db:                config.Database,
 		router:            router,
 		api:               api,
 		renderer:          mdRenderer,
 		articleTemplate:   tmpl,
-		jwtSecret:         []byte(jwtSecret),
-		WikiName:          wikiName,
+		jwtSecret:         []byte(config.JwtSecret),
+		WikiName:          config.WikiName,
 		LocalIssuer:       localIssuer,
-		jwksURL:           jwksURL,
-		externalIssuer:    jwtIssuer,
-		jwtEmailClaim:     jwtEmailClaim,
-		production:        production,
-		trustProxyHeaders: trustProxyHeaders,
+		jwksURL:           config.JwksURL,
+		externalIssuer:    config.JwtIssuer,
+		jwtEmailClaim:     config.JwtEmailClaim,
+		production:        config.Production,
+		trustProxyHeaders: config.TrustProxyHeaders,
+		insecureCookies:   config.InsecureCookies,
+		port:              config.Port,
 	}
 
-	if jwksURL != "" {
-		jwks, err := keyfunc.NewDefaultCtx(context.Background(), []string{jwksURL})
+	if config.JwksURL != "" {
+		jwks, err := keyfunc.NewDefaultCtx(context.Background(), []string{config.JwksURL})
 		if err != nil {
-			return nil, fmt.Errorf("failed to initialize JWKS from %s: %w", jwksURL, err)
+			return nil, fmt.Errorf("failed to initialize JWKS from %s: %w", config.JwksURL, err)
 		}
 
 		server.jwks = jwks
@@ -128,8 +139,12 @@ func NewServer(
 		return nil, err
 	}
 
-	if pluginPath != "" {
-		err = server.registerPluginRoutes(pluginPath, pluginStoragePath, jsPkgsPath)
+	if config.PluginPath != "" {
+		err = server.registerPluginRoutes(
+			config.PluginPath,
+			config.PluginStoragePath,
+			config.JsPkgsPath,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -154,14 +169,14 @@ func NewServer(
 }
 
 // Start starts the HTTP server.
-func (s *Server) Start(addr string) error {
+func (s *Server) Start() error {
 	handler := s.hardeningMiddleware(s.router)
 	handler = s.LoggerMiddleware(handler)
 	handler = s.authMiddleware(handler)
 	handler = s.contextMiddleware(handler)
 
 	s.httpServer = &http.Server{
-		Addr:    addr,
+		Addr:    fmt.Sprintf(":%d", s.port),
 		Handler: handler,
 	}
 
