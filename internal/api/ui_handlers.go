@@ -17,6 +17,16 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 )
 
+// isHTMXRequest checks if the request is coming from HTMX
+func isHTMXRequest(r *http.Request) bool {
+	return r.Header.Get("HX-Request") == "true"
+}
+
+// isHTMXBoost checks if this is a boosted navigation request
+func isHTMXBoost(r *http.Request) bool {
+	return r.Header.Get("HX-Boosted") == "true"
+}
+
 // uiRenderExternalIDPDisabled renders the page shown when external IDP is enabled.
 func (s *Server) uiRenderExternalIDPDisabled(w http.ResponseWriter, r *http.Request) {
 	s.renderWithUser(w, r, "external_idp_disabled.gohtml", nil)
@@ -171,7 +181,7 @@ func (s *Server) uiHandleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := s.handleLogin(r.Context(), input)
 	if err != nil {
-		if r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+		if isHTMXRequest(r) || r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
 			w.Header().Set("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusBadRequest)
 			_, _ = w.Write([]byte(err.Error()))
@@ -184,6 +194,12 @@ func (s *Server) uiHandleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 
 	for _, cookieStr := range resp.Cookies {
 		w.Header().Add("Set-Cookie", cookieStr)
+	}
+
+	if isHTMXRequest(r) {
+		w.Header().Set("HX-Redirect", "/dashboard")
+		w.WriteHeader(http.StatusOK)
+		return
 	}
 
 	if r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
@@ -202,6 +218,13 @@ func (s *Server) uiHandleLogout(w http.ResponseWriter, r *http.Request) {
 	for _, cookieStr := range resp.Cookies {
 		w.Header().Add("Set-Cookie", cookieStr)
 	}
+
+	if isHTMXRequest(r) {
+		w.Header().Set("HX-Redirect", "/")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
@@ -229,6 +252,13 @@ func (s *Server) uiActionCreateIntent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	redirectUrl := fmt.Sprintf("/editor/%d", resp.Body.DraftID)
+
+	if isHTMXRequest(r) {
+		w.Header().Set("HX-Redirect", redirectUrl)
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	http.Redirect(w, r, redirectUrl, http.StatusFound)
 }
 
@@ -456,7 +486,7 @@ func (s *Server) uiError(w http.ResponseWriter, r *http.Request, err error) {
 }
 
 // render executes a named template into a buffer before writing to the response.
-func (s *Server) render(w http.ResponseWriter, tmplName string, pageData any) {
+func (s *Server) render(w http.ResponseWriter, r *http.Request, tmplName string, pageData any) {
 	if s.compiledTemplates == nil {
 		http.Error(w, "Templates not initialized. Call app.InitTemplates()", 500)
 		return
@@ -476,14 +506,30 @@ func (s *Server) render(w http.ResponseWriter, tmplName string, pageData any) {
 	}
 
 	var buf bytes.Buffer
-	err := tmpl.ExecuteTemplate(&buf, "base.gohtml", pageData)
-	if err != nil {
-		fmt.Printf("Template Error [%s]: %v\n", tmplName, err)
-		http.Error(w, "Template rendering failed", 500)
-		return
+
+	if isHTMXRequest(r) && isHTMXBoost(r) {
+		err := tmpl.ExecuteTemplate(&buf, "content", pageData)
+		if err != nil {
+			fmt.Printf("Template Error [%s]: %v\n", tmplName, err)
+			http.Error(w, "Template rendering failed", 500)
+			return
+		}
+	} else {
+		err := tmpl.ExecuteTemplate(&buf, "base.gohtml", pageData)
+		if err != nil {
+			fmt.Printf("Template Error [%s]: %v\n", tmplName, err)
+			http.Error(w, "Template rendering failed", 500)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	if isHTMXRequest(r) {
+		w.Header().Set("HX-Trigger", "contentUpdated")
+		w.Header().Set("HX-Retarget", "main")
+	}
+
 	_, _ = buf.WriteTo(w)
 }
 
@@ -505,7 +551,7 @@ func (s *Server) renderWithUser(w http.ResponseWriter, r *http.Request, tmplName
 		Data:     data,
 		WikiName: s.WikiName,
 	}
-	s.render(w, tmplName, payload)
+	s.render(w, r, tmplName, payload)
 }
 
 func (s *Server) uiRenderUser(w http.ResponseWriter, r *http.Request) {

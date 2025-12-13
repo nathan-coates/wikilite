@@ -174,9 +174,36 @@
             to {bottom: 0; opacity: 0;}
         }
     </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js" integrity="sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz" crossorigin="anonymous"></script>
+    
+    <style>
+        main {
+            transition: opacity 0.2s ease-in-out;
+            min-height: 200px;
+        }
+        
+        .htmx-swapping main {
+            opacity: 0.7;
+        }
+        
+        .htmx-request main {
+            opacity: 0.9;
+        }
+
+        .htmx-settling main {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0.7; }
+            to { opacity: 1; }
+        }
+    </style>
+    
     {{block "head" .}}{{end}}
 </head>
-<body>
+<body hx-boost="true">
 <header>
     <a href="/" class="logo">{{.WikiName}}</a>
     <nav>
@@ -211,5 +238,36 @@
     {{block "content" .}}{{end}}
 </main>
 <div id="toast"></div>
+
+
+
+<script>
+    htmx.config.globalViewTransitions = true;
+    htmx.config.scrollBehavior = 'smooth';
+    htmx.config.defaultSwapStyle = 'innerHTML';
+    htmx.config.defaultSwapDelay = 50;
+    htmx.config.defaultSettleDelay = 100;
+
+    let requestStartTime;
+    document.body.addEventListener('htmx:beforeRequest', function(_) {
+        requestStartTime = Date.now();
+    });
+    
+    document.body.addEventListener('htmx:beforeSwap', function(evt) {
+        const elapsed = Date.now() - requestStartTime;
+        if (elapsed < 150) {
+            evt.detail.swapDelay = 150 - elapsed;
+        }
+    });
+    
+    document.body.addEventListener('htmx:responseError', function(evt) {
+        showToast('Request failed: ' + evt.detail.xhr.statusText, 'error');
+    });
+    
+    document.body.addEventListener('htmx:sendError', function(_) {
+        showToast('Network error occurred', 'error');
+    });
+</script>
+
 </body>
 </html>
