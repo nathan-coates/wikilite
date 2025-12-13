@@ -7,7 +7,7 @@
         <h1 style="margin-bottom: 1.5rem;">Create New Article</h1>
 
         <div style="padding: 2rem; border: 1px solid var(--border); border-radius: 8px; background: #fff;">
-            <form action="/new" method="POST">
+            <form action="/new" method="POST" hx-post="/new">
                 <div style="margin-bottom: 1.5rem;">
                     <label for="title" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Article Title</label>
                     <input type="text"

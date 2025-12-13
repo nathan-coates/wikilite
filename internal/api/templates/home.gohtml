@@ -19,9 +19,12 @@
             {{end}}
         </ul>
 
-        <div style="margin-top: 2rem; display: flex; gap: 10px;">
-            {{if gt .Data.Page 1}}
-                <a href="/?page={{ sub .Data.Page 1 }}" class="btn btn-outline">&larr; Previous</a>
+        <div style="margin-top: 2rem; display: flex; gap: 10px; justify-content: space-between;">
+            <div></div>
+            {{if .Data.Articles}}
+                <div style="color: #666; font-size: 0.9rem;">
+                    Showing {{len .Data.Articles}} articles
+                </div>
             {{end}}
         </div>
     {{else}}
