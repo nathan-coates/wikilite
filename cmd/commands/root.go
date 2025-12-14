@@ -40,25 +40,25 @@ type config struct {
 func NewRootCmd() *cobra.Command {
 	state := &cliState{}
 
-	var portNumber int
-	port := os.Getenv("PORT")
-	if port != "" {
-		cnvPort, err := strconv.Atoi(port)
-		if err != nil {
-			log.Fatalf("Invalid PORT value: %v", err)
-		}
-
-		portNumber = cnvPort
-	} else {
-		portNumber = api.DefaultPort
-	}
-
 	rootCmd := &cobra.Command{
 		Use:   "wikilite",
 		Short: "WikiLite CLI",
 		Long:  `CLI for managing the WikiLite application.`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			_ = godotenv.Load()
+
+			var portNumber int
+			port := os.Getenv("PORT")
+			if port != "" {
+				cnvPort, err := strconv.Atoi(port)
+				if err != nil {
+					log.Fatalf("Invalid PORT value: %v", err)
+				}
+
+				portNumber = cnvPort
+			} else {
+				portNumber = api.DefaultPort
+			}
 
 			state.Config = config{
 				DBPath:            os.Getenv("DB_PATH"),
