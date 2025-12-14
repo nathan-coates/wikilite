@@ -7,7 +7,7 @@
         <h1 style="margin:0;">{{.Data.Title}}</h1>
         <div>
             {{if .User}}
-                <form action="/wiki/{{.Data.Slug}}/edit" method="POST" style="display:inline;">
+                <form action="/wiki/{{.Data.Slug}}/edit" method="POST" style="display:inline;" hx-boost="false">
                     <button type="submit" class="btn">Edit</button>
                 </form>
             {{end}}

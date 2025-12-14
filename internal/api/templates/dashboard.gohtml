@@ -26,7 +26,7 @@
                     {{range .Data.Drafts}}
                         <tr style="border-bottom: 1px solid var(--border);">
                             <td style="padding: 12px 15px;">
-                                <a href="/editor/{{.Id}}" style="font-weight: 600; text-decoration: none; color: var(--link);">
+                                <a href="/editor/{{.Id}}" hx-boost="false" style="font-weight: 600; text-decoration: none; color: var(--link);">
                                     {{if .ArticleTitle}}{{.ArticleTitle}}{{else}}Untitled Draft{{end}}
                                 </a>
                                 <div style="font-size: 0.8rem; color: #666;">Draft ID: {{.Id}}</div>
@@ -35,7 +35,7 @@
                                 {{.UpdatedAt.Format "Jan 02, 2006 at 15:04"}}
                             </td>
                             <td style="padding: 12px 15px; text-align: right;">
-                                <a href="/editor/{{.Id}}" class="btn" style="padding: 4px 10px; font-size: 0.85rem;">Continue Editing</a>
+                                <a href="/editor/{{.Id}}" hx-boost="false" class="btn" style="padding: 4px 10px; font-size: 0.85rem;">Continue Editing</a>
                             </td>
                         </tr>
                     {{end}}
@@ -66,7 +66,7 @@
                         </div>
                         <div>
                             <a href="/wiki/{{.Slug}}" class="btn btn-outline" style="padding: 4px 10px; font-size: 0.85rem; margin-right: 5px;">View</a>
-                            <form action="/wiki/{{.Slug}}/edit" method="POST" style="display:inline;">
+                            <form action="/wiki/{{.Slug}}/edit" method="POST" style="display:inline;" hx-boost="false">
                                 <button type="submit" class="btn btn-outline" style="padding: 4px 10px; font-size: 0.85rem;">Edit</button>
                             </form>
                         </div>

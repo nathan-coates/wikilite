@@ -1,8 +1,9 @@
 {{template "base.gohtml" .}}
 
 {{define "content"}}
-    <div class="flex-row">
-        <h2>Latest Articles</h2>
+    <div class="flex-row" style="margin-bottom: 2rem;">
+        <h2 style="margin:0;">Latest Articles</h2>
+        <div style="font-size: 0.9rem; color: #666;">Total: {{.Data.Total}}</div>
     </div>
 
     {{if .Data.Articles}}
@@ -19,12 +20,12 @@
             {{end}}
         </ul>
 
-        <div style="margin-top: 2rem; display: flex; gap: 10px; justify-content: space-between;">
-            <div></div>
-            {{if .Data.Articles}}
-                <div style="color: #666; font-size: 0.9rem;">
-                    Showing {{len .Data.Articles}} articles
-                </div>
+        <div style="margin-top: 2rem; display: flex; gap: 10px;">
+            {{if gt .Data.Page 1}}
+                <a href="/?page={{ sub .Data.Page 1 }}" class="btn btn-outline">&larr; Newer</a>
+            {{end}}
+            {{if eq (len .Data.Articles) .Data.Limit}}
+                <a href="/?page={{ add .Data.Page 1 }}" class="btn btn-outline">Older &rarr;</a>
             {{end}}
         </div>
     {{else}}
